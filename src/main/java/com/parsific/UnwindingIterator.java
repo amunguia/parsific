@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Stack;
 
-public final class UnwindingIterator<E> implements Iterator<E> {
+public final class UnwindingIterator<E> implements PeekingIterator<E> {
 
   private int next;
   private final Stack<Integer> unwindStack;
@@ -29,6 +29,14 @@ public final class UnwindingIterator<E> implements Iterator<E> {
   public E next() {
     if (hasNext()) {
       return list.get(next++);
+    }
+    throw new NoSuchElementException("Reached end of iterator.");
+  }
+
+  @Override
+  public E peek() {
+    if (hasNext()) {
+      return list.get(next + 1);
     }
     throw new NoSuchElementException("Reached end of iterator.");
   }
