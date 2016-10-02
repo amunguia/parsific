@@ -15,7 +15,8 @@ public class UnwindingIteratorTest {
 
   @Before
   public void setUp() {
-    unwindingIterator = new UnwindingIterator(Arrays.asList(1, 2, 3, 4, 5));
+    unwindingIterator = new UnwindingIterator(
+        new ArrayLikeList(Arrays.asList(1, 2, 3, 4, 5)));
   }
 
   @Test

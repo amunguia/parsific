@@ -1,7 +1,6 @@
 package com.parsific;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -10,25 +9,25 @@ import java.util.Stack;
 
 public final class UnwindingIterator<E> implements PeekingIterator<E> {
 
+  private final ArrayLike<E> arrayLike;
   private int next;
   private final Stack<Integer> unwindStack;
-  private final List<E> list;
 
-  public UnwindingIterator(Collection<E> collection) {
+  public UnwindingIterator(ArrayLike<E> arrayLike) {
+    this.arrayLike = arrayLike;
     this.next = 0;
     this.unwindStack = new Stack<>();
-    this.list = new ArrayList<>(collection);
   }
 
   @Override
   public boolean hasNext() {
-    return next < list.size();
+    return next < arrayLike.length();
   }
 
   @Override
   public E next() {
     if (hasNext()) {
-      return list.get(next++);
+      return arrayLike.get(next++);
     }
     throw new NoSuchElementException("Reached end of iterator.");
   }
@@ -36,7 +35,7 @@ public final class UnwindingIterator<E> implements PeekingIterator<E> {
   @Override
   public E peek() {
     if (hasNext()) {
-      return list.get(next + 1);
+      return arrayLike.get(next + 1);
     }
     throw new NoSuchElementException("Reached end of iterator.");
   }

@@ -27,4 +27,12 @@ public final class Either<L, R> {
   public boolean isRight() {
     return right.isPresent();
   }
+
+  public L left() {
+    return isLeft() ? left.get() : null;
+  }
+
+  public R right() {
+    return isRight() ? right.get() : null;
+  }
 }
