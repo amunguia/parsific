@@ -35,7 +35,7 @@ public final class UnwindingIterator<E> implements PeekingIterator<E> {
   @Override
   public E peek() {
     if (hasNext()) {
-      return arrayLike.get(next + 1);
+      return arrayLike.get(next);
     }
     throw new NoSuchElementException("Reached end of iterator.");
   }
