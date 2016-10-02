@@ -7,7 +7,7 @@ import java.util.function.BiFunction;
 
 public interface Parser<S, T> {
 
-	 Either<String, T> parse(UnwindingIterator<S> iterator);
+  Either<String, T> parse(UnwindingIterator<S> iterator);
 
   default Either<String, T> parse(S[] array) {
     return parse(
