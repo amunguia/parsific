@@ -78,6 +78,45 @@ public final class Combinators {
     };
   }
 
+  public static <S, T> Parser<S, T> dropLeft(
+      Parser<S, T> main, Parser<S, ?> ... drop) {
+    return (iterator) -> {
+      for (int i = 0; i < drop.length; i++) {
+        Either<String, ?> dropResult = drop[i].parse(iterator);
+        if (dropResult.isLeft()) {
+          return Either.left(dropResult.left());
+        }
+      }
+
+      return main.parse(iterator);
+    };
+  }
+
+  public static <S, T> Parser<S, T> dropRight(
+      Parser<S, T> main, Parser<S, ?> ... drop) {
+    return (iterator) -> {
+      Either<String, T> result = main.parse(iterator);
+      if (result.isLeft()) {
+        return result;
+      }
+      for (int i = 0; i < drop.length; i++) {
+        Either<String, ?> dropResult = drop[i].parse(iterator);
+        if (dropResult.isLeft()) {
+          return Either.left(dropResult.left());
+        }
+      }
+      return result;
+    };
+  }
+
+  public static <S> Parser<S, EOF> end() {
+    return (iterator) -> {
+      return iterator.hasNext()
+          ? Either.left("Input still existed, but expected end of input.")
+          : Either.right(EOF.instance);
+    };
+  }
+
   /**
    * Returns a parser that always succeeds. If the provided parser is
    * successful, this parser will return an Optional with a value. If the
@@ -129,6 +168,14 @@ public final class Combinators {
     };
   }
 
+  public static <S, T> Parser<S, T> orDefault(
+      Parser<S, T> parser, T defaultValue) {
+    return (iterator) -> {
+      Either<String, T> result = parser.parse(iterator);
+      return result.isRight() ? result : Either.right(defaultValue);
+    };
+  }
+
   interface Callable<T> {
     T call();
   }
@@ -170,5 +217,13 @@ public final class Combinators {
       return Either.left(optFailure.get());
     }
     return checkForException(callable);
+  }
+
+  static class EOF {
+
+    public static EOF instance = new EOF();
+
+    private EOF() {}
+
   }
 }

@@ -43,6 +43,62 @@ public class CombinatorsTest {
     assertEquals(new Character('A'), andP.parse(toIterator("abcde")).right());
   }
 
+  @Test
+  public void dropLeft_onlyReturnsDesiredValue() {
+    Parser<Character, Character> dropLeftP =
+      dropLeft(one('c'), one('a'), one('b'));
+    assertEquals(
+        new Character('c'), dropLeftP.parse(toIterator("abc")).right());
+  }
+
+  @Test
+  public void dropLeft_failsIfAnyDroppedParserFails() {
+    Parser<Character, Character> dropLeftP =
+      dropLeft(one('c'), one('a'), one('b'));
+    assertFalse(dropLeftP.parse(toIterator("aac")).isRight());
+  }
+
+  @Test
+  public void dropLeft_failsIfTheMainParserFails() {
+    Parser<Character, Character> dropLeftP =
+      dropLeft(one('c'), one('a'), one('b'));
+    assertFalse(dropLeftP.parse(toIterator("aba")).isRight());
+  }
+
+  @Test
+  public void dropRight_onlyReturnsDesiredValue() {
+    Parser<Character, Character> dropRightR =
+      dropRight(one('a'), one('b'), one('c'));
+    assertEquals(
+        new Character('a'), dropRightR.parse(toIterator("abc")).right());
+  }
+
+  @Test
+  public void dropRight_failsIfAnyDroppedParserFails() {
+    Parser<Character, Character> dropRightR =
+      dropRight(one('a'), one('b'), one('c'));
+    assertFalse(dropRightR.parse(toIterator("abb")).isRight());
+  }
+
+  @Test
+  public void dropRight_failsIfTheMainParserFails() {
+    Parser<Character, Character> dropRightR =
+      dropRight(one('a'), one('b'), one('c'));
+    assertFalse(dropRightR.parse(toIterator("bbc")).isRight());
+  }
+
+  @Test
+  public void end_succeedsAtEndOfInput() {
+    Parser<Character, EOF> endP = end();
+    assertTrue(endP.parse(toIterator("")).isRight());
+  }
+
+  @Test
+  public void end_failsWhenNotAtEndOfInput() {
+    Parser<Character, EOF> endP = end();
+    assertFalse(endP.parse(toIterator("a")).isRight());
+  }
+
 
   @Test
   public void maybe_returnsNonEmptyOptionalOnSuccess() {
@@ -124,8 +180,17 @@ public class CombinatorsTest {
   }
 
   @Test
-  public void sepBy() {
+  public void orDefault_returnsSuccessParsedValue() {
+    Parser<Character, Character> orDefaultP = orDefault(one('a'), '!');
+    assertEquals(
+      new Character('a'), orDefaultP.parse(toIterator("a")).right());
+  }
 
+  @Test
+  public void orDefault_returnsDefaultValueOnParseFail() {
+    Parser<Character, Character> orDefaultP = orDefault(one('a'), '!');
+    assertEquals(
+      new Character('!'), orDefaultP.parse(toIterator("b")).right());
   }
 
   private UnwindingIterator<Character> toIterator(String string) {
