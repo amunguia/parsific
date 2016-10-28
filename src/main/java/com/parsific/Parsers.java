@@ -2,8 +2,10 @@ package com.parsific;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -73,8 +75,9 @@ public class Parsers {
    * Returns a parser that succeeds when the next token is not equal to the
    * provided token.
    */
-  public static <S> Parser<S, S> not(S s) {
-    return one(s2 -> !s2.equals(s));
+  public static <S> Parser<S, S> not(S ... ss) {
+    Set<S> set = new HashSet<S>(Arrays.asList(ss));
+    return one(s -> !set.contains(s));
   }
 
   /**

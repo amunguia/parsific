@@ -108,6 +108,12 @@ public class ParsersTest {
   }
 
   @Test
+  public void not_worksWithMultiArg() {
+    Parser<Character, Character> notP = not ('a', 'b', 'c');
+    assertEquals(new Character('d'), notP.parse(toIterator("d")).right());
+  }
+
+  @Test
   public void not_failsOnEquals() {
     Parser<Character, Character> notP = not('a');
     assertFalse(notP.parse(toIterator("a")).isRight());
