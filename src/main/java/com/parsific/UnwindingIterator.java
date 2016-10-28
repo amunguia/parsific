@@ -40,6 +40,13 @@ public final class UnwindingIterator<E> implements PeekingIterator<E> {
     throw new NoSuchElementException("Reached end of iterator.");
   }
 
+  public UnwindingIterator<E> clearWind() {
+    if (!unwindStack.isEmpty()) {
+      unwindStack.pop();
+    }
+    return this;
+  }
+
   public UnwindingIterator<E> unwind() {
     if (!unwindStack.isEmpty()) {
       next = unwindStack.pop();
@@ -47,6 +54,10 @@ public final class UnwindingIterator<E> implements PeekingIterator<E> {
     return this;
   }
 
+  /**
+   * For every call to wind, there should be a corresponding call to either
+   * unwind or clearWind.
+   */
   public UnwindingIterator<E> wind() {
     unwindStack.push(next);
     return this;

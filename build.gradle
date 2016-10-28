@@ -11,7 +11,7 @@ dependencies {
 
 task fatJar(type: Jar) {
 	manifest {
-        attributes 'Implementation-Title': 'Rouq Compiler'
+        attributes 'Implementation-Title': 'Parsific'
     }
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }

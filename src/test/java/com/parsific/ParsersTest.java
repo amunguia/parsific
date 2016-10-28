@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -14,198 +13,154 @@ import java.util.Optional;
 
 public class ParsersTest {
 
-  private UnwindingIterator<Character> alphabeticText;
-  private UnwindingIterator<Character> digitText;
-  private UnwindingIterator<Character> emptyText;
-  private UnwindingIterator<Character> manyAText;
+  @Test
+  public void all_succeedsWhenAllFound() {
+    Parser<Character, List<Character>> allP = all('a', 'b', 'c');
+    List<Character> parsedChars = allP.parse(toIterator("abc")).right();
 
-  @Before
-  public void setUp() {
-    alphabeticText = new UnwindingIterator<>(new ArrayLikeString("a"));
-    manyAText = new UnwindingIterator<>(new ArrayLikeString("aaabbb"));
-    digitText = new UnwindingIterator<>(new ArrayLikeString("1"));
-    emptyText = new UnwindingIterator<>(new ArrayLikeString(""));
+    assertEquals(3, parsedChars.size());
+    assertEquals(new Character('a'), parsedChars.get(0));
+    assertEquals(new Character('b'), parsedChars.get(1));
+    assertEquals(new Character('c'), parsedChars.get(2));
   }
 
   @Test
-  public void many_emptyListOnFail() {
-    Parser<Character, List<Character>> manyAParser = many((c) -> c == 'b');
-    Either<String, List<Character>> result = manyAParser.parse(digitText);
+  public void all_failsWhenAllNotFound() {
+    Parser<Character, List<Character>> allP = all('a', 'b', 'c');
+    assertFalse(allP.parse(toIterator("abd")).isRight());
+  }
+
+  @Test
+  public void all_returnsEmptyListWhenNoElementsMatched() {
+    Parser<Character, List<Character>> allP = all();
+    assertTrue(allP.parse(toIterator("abd")).right().isEmpty());
+  }
+
+  @Test
+  public void any_returnsMatch() {
+    Parser<Character, Character> anyP = any('a', 'b', 'c', 'd');
+    UnwindingIterator<Character> text = toIterator("ad");
+    assertEquals(new Character('a'), anyP.parse(text).right());
+    assertEquals(new Character('d'), anyP.parse(text).right());
+  }
+
+  @Test
+  public void any_failsOnNoMatch() {
+    Parser<Character, Character> anyP = any('a', 'b', 'c', 'd');
+    assertFalse(anyP.parse(toIterator("A")).isRight());
+  }
+
+  @Test
+  public void many_succeedsOnNoMatches() {
+    Parser<Character, List<Character>> manyP =
+        many((c) -> c == 'a' || c == 'b');
+    assertTrue(manyP.parse(toIterator("ccc")).right().isEmpty());
+  }
+
+  @Test
+  public void many_returnsAllMatches() {
+    Parser<Character, List<Character>> manyP =
+        many((c) -> c == 'a' || c == 'b' || c == 'c');
+    UnwindingIterator<Character> text = toIterator("abcd");
+    List<Character> parsedChars = manyP.parse(text).right();
+
+    assertEquals(3, parsedChars.size());
+    assertEquals(new Character('a'), parsedChars.get(0));
+    assertEquals(new Character('b'), parsedChars.get(1));
+    assertEquals(new Character('c'), parsedChars.get(2));
+  }
+
+  @Test
+  public void many1_returnsAllMatches() {
+    Parser<Character, List<Character>> many1P =
+        many1((c) -> c == 'a' || c == 'b' || c == 'c');
+    UnwindingIterator<Character> text = toIterator("abcd");
+    List<Character> parsedChars = many1P.parse(text).right();
+
+    assertEquals(3, parsedChars.size());
+    assertEquals(new Character('a'), parsedChars.get(0));
+    assertEquals(new Character('b'), parsedChars.get(1));
+    assertEquals(new Character('c'), parsedChars.get(2));
+  }
+
+  @Test
+  public void many1_succeedsOnOneMatch() {
+    Parser<Character, List<Character>> many1P =
+        many1((c) -> c == 'a' || c == 'b' || c == 'c');
+    UnwindingIterator<Character> text = toIterator("ad");
+    List<Character> parsedChars = many1P.parse(text).right();
+
+    assertEquals(1, parsedChars.size());
+    assertEquals(new Character('a'), parsedChars.get(0));
+  }
+
+  @Test
+  public void many1_failsOnZeroMatches() {
+    Parser<Character, List<Character>> many1P =
+        many1((c) -> c == 'a' || c == 'b');
+    assertFalse(many1P.parse(toIterator("ccc")).isRight());
+  }
+
+  @Test
+  public void not_returnsOnNotEquals() {
+    Parser<Character, Character> notP = not('a');
+    assertEquals(new Character('b'), notP.parse(toIterator("b")).right());
+  }
+
+  @Test
+  public void not_failsOnEquals() {
+    Parser<Character, Character> notP = not('a');
+    assertFalse(notP.parse(toIterator("a")).isRight());
+  }
+
+  @Test
+  public void one_returnsMatch() {
+    Parser<Character, Character> oneP = one();
+    assertEquals(new Character('a'), oneP.parse(toIterator("a")).right());
+  }
+
+  @Test
+  public void one_failsAtEndOfString() {
+    Parser<Character, Character> oneP = one();
+    Either<String, Character> result = oneP.parse(new ArrayLikeString(""));
+    assertFalse(result.isRight());
+  }
+
+  @Test
+  public void one_predicateSuccess() {
+    Parser<Character, Character> oneP = one(c -> c == 'a');
+    assertEquals(new Character('a'), oneP.parse(toIterator("a")).right());
+  }
+
+  @Test
+  public void one_predicateFails() {
+    Parser<Character, Character> oneP = one(c -> c == 'a');
+    assertFalse(oneP.parse(toIterator("b")).isRight());
+  }
+
+  @Test
+  public void one_exactMatchSuccess() {
+    Parser<Character, Character> oneP = one('a');
+    assertEquals(new Character('a'), oneP.parse(toIterator("a")).right());
+  }
+
+  @Test
+  public void one_exactMatchFails() {
+    Parser<Character, Character> oneP = one('a');
+    assertFalse(oneP.parse(toIterator("b")).isRight());
+  }
+
+  @Test
+  public void one_updatesIterator() {
+    Parser<Character, Character> oneP = one();
+    UnwindingIterator<Character> text = toIterator("a");
+    Either<String, Character> result = oneP.parse(text);
     assertTrue(result.isRight());
-    assertEquals(0, result.right().size());
+    result = oneP.parse(text);
+    assertFalse(result.isRight());
   }
 
-  @Test
-  public void many_parsesAllMatches() {
-    Parser<Character, List<Character>> manyAParser = many((c) -> c == 'a');
-    Either<String, List<Character>> result = manyAParser.parse(manyAText);
-    assertTrue(result.isRight());
-    assertEquals(3, result.right().size());
-  }
-
-  @Test
-  public void many_withTransform_emptyListOnFail() {
-    Parser<Character, Object[]> manyAParser =
-        many(
-            (Character c) -> false,
-            (List<Character> list) ->
-                list.stream().map((Character c) -> 'A').toArray());
-    Either<String, Object[]> result = manyAParser.parse(digitText);
-    assertTrue(result.isRight());
-    assertEquals(0, result.right().length);
-  }
-
-  @Test
-  public void many_withTransfor_parsesAllMatches() {
-    Parser<Character, Object[]> manyAParser =
-        many(
-            (Character c) -> c == 'a',
-            (List<Character> list) ->
-                list.stream().map((Character c) -> 'A').toArray());
-    Either<String, Object[]> result = manyAParser.parse(manyAText);
-    assertTrue(result.isRight());
-    assertEquals(3, result.right().length);
-  }
-
-  @Test
-  public void many1_isLeftOnEmptyList() {
-    Parser<Character, List<Character>> manyAParser = many1((c) -> c == 'b');
-    Either<String, List<Character>> result = manyAParser.parse(digitText);
-    assertTrue(result.isLeft());
-  }
-
-  @Test
-  public void many1_parsesAllMatches() {
-    Parser<Character, List<Character>> manyAParser = many1((c) -> c == 'a');
-    Either<String, List<Character>> result = manyAParser.parse(manyAText);
-    assertTrue(result.isRight());
-    assertEquals(3, result.right().size());
-  }
-
-  @Test
-  public void many1_withTransform_isLeftOnEmptyResult() {
-    Parser<Character, Object[]> manyAParser =
-        many1(
-            (Character c) -> false,
-            (List<Character> list) ->
-                list.stream().map((Character c) -> 'A').toArray());
-    Either<String, Object[]> result = manyAParser.parse(digitText);
-    assertTrue(result.isLeft());
-  }
-
-  @Test
-  public void many1_withTransfor_parsesAllMatches() {
-    Parser<Character, Object[]> manyAParser =
-        many1(
-            (Character c) -> c == 'a',
-            (List<Character> list) ->
-                list.stream().map((Character c) -> 'A').toArray());
-    Either<String, Object[]> result = manyAParser.parse(manyAText);
-    assertTrue(result.isRight());
-    assertEquals(3, result.right().length);
-  }
-
-  @Test
-  public void maybe_returnsRightWithOptionalValue_onSuccess() {
-    Parser<Character, Optional<Character>> alphabeticParser =
-        maybe(one((c) -> true, (c) -> c));
-    Either<String, Optional<Character>> result =
-        alphabeticParser.parse(alphabeticText);
-    assertTrue(result.isRight());
-    assertEquals(new Character('a'), result.right().get());
-  }
-
-  @Test
-  public void maybe_returnsRightWithEmptyOptional_onFail() {
-    Parser<Character, Optional<Character>> alphabeticParser =
-        maybe(one((c) -> false, (c) -> c));
-    Either<String, Optional<Character>> result =
-        alphabeticParser.parse(alphabeticText);
-    assertTrue(result.isRight());
-    assertFalse(result.right().isPresent());
-
-  }
-
-  @Test
-  public void one_returnsRightOnSuccess() {
-    Parser<Character, Character> alphabeticParser = one();
-    Either<String, Character> result = alphabeticParser.parse(alphabeticText);
-    assertTrue(result.isRight());
-    assertEquals(new Character('a'), result.right());
-
-    // Ensure the iterator has been incremented.
-    assertTrue(alphabeticParser.parse(alphabeticText).isLeft());
-  }
-
-  @Test
-  public void one_returnsLeftOnFail() {
-    Parser<Character, Character> alphabeticParser = one();
-    assertTrue(alphabeticParser.parse(emptyText).isLeft());
-  }
-
-  @Test
-  public void one_withTransform_returnsRightOnSuccess() {
-    Parser<Character, Character> alphabeticParser = one(
-        (c) -> Character.toUpperCase(c));
-    Either<String, Character> result = alphabeticParser.parse(alphabeticText);
-    assertTrue(result.isRight());
-    assertEquals(new Character('A'), result.right());
-
-    // Ensure the iterator has been incremented.
-    assertTrue(alphabeticParser.parse(alphabeticText).isLeft());
-  }
-
-  @Test
-  public void one_withTransform_returnsLeftOnFail() {
-    Parser<Character, Character> alphabeticParser = one(
-        (c) -> Character.toUpperCase(c));
-    assertTrue(alphabeticParser.parse(emptyText).isLeft());
-  }
-
-  @Test
-  public void one_withPredicate_returnsRightOnSuccess() {
-    Parser<Character, Character> alphabeticParser = one(
-        (c) -> Character.isAlphabetic(c),
-        (c) -> Character.toUpperCase(c));
-    Either<String, Character> result = alphabeticParser.parse(alphabeticText);
-    assertTrue(result.isRight());
-    assertEquals(new Character('A'), result.right());
-
-    // Ensure the iterator has been incremented.
-    assertTrue(alphabeticParser.parse(alphabeticText).isLeft());
-  }
-
-  @Test
-  public void one_withPredicate_returnsLeftOnFail() {
-    Parser<Character, Character> alphabeticParser = one(
-        (c) -> Character.isAlphabetic(c),
-        (c) -> Character.toUpperCase(c));
-    assertTrue(alphabeticParser.parse(digitText).isLeft());
-  }
-
-  @Test
-  public void one_withPredicate_failsOnEndOfIterator() {
-    Parser<Character, Character> alphabeticParser = one(
-        (c) -> Character.isAlphabetic(c),
-        (c) -> Character.toUpperCase(c));
-    assertTrue(alphabeticParser.parse(Arrays.asList()).isLeft());
-  }
-
-  @Test
-  public void or_emptyArrayReturnsLeft() {
-    Parser<Character, Character> emptyParser = or();
-    assertTrue(emptyParser.parse(alphabeticText).isLeft());
-  }
-
-  @Test
-  public void or_returnsLeftOnFirstMatch() {
-    Parser<Character, Character> parsers = or (
-        one((c) -> c == '1', (c) -> '0'),
-        one((c) -> c == 'a', (c) -> 'A'),
-        one((c) -> c == 'b', (c) -> 'B')
-      );
-    Either<String, Character> result = parsers.parse(alphabeticText);
-    assertTrue(result.isRight());
-    assertEquals(new Character('A'), result.right());
+  private UnwindingIterator<Character> toIterator(String string) {
+    return new UnwindingIterator<>(new ArrayLikeString(string));
   }
 }
