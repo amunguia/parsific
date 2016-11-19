@@ -8,6 +8,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import java.util.LinkedList;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -120,7 +121,7 @@ public class CombinatorsTest {
     UnwindingIterator<Character> text = toIterator("b");
     Parser<Character, Optional<Character>> failP = (iterator) -> {
       iterator.next(); // Purposefully advance the iterator pointer.
-      return Either.left("Failed");
+      return Either.left(new Exception("Failed"));
     };
     maybe(failP).parse(text).right();
     Optional<Character> optB =
@@ -140,7 +141,7 @@ public class CombinatorsTest {
     Parser<Character, Character> mappedP = map(one(), c -> {
       throw new RuntimeException(errorMessage);
     });
-    assertEquals(errorMessage, mappedP.parse(toIterator("a")).left());
+    assertEquals(errorMessage, mappedP.parse(toIterator("a")).left().getMessage());
   }
 
   @Test
@@ -150,7 +151,7 @@ public class CombinatorsTest {
       throw new RuntimeException(failMessage);
     };
     Parser<Character, Character> mappedP = map(one(), f);
-    assertEquals(failMessage, mappedP.parse(toIterator("a")).left());
+    assertEquals(failMessage, mappedP.parse(toIterator("a")).left().getMessage());
   }
 
   @Test
@@ -191,6 +192,31 @@ public class CombinatorsTest {
     Parser<Character, Character> orDefaultP = orDefault(one('a'), '!');
     assertEquals(
       new Character('!'), orDefaultP.parse(toIterator("b")).right());
+  }
+
+  @Test
+  public void seperatedBy_failsWhenCantMatchOne() {
+    Parser<Character, LinkedList<Character>> sepP = seperatedBy(one('a'), ',');
+    assertFalse(sepP.parse(toIterator("b")).isRight());
+  }
+
+  @Test
+  public void seperatedBy_matchesOne() {
+    Parser<Character, LinkedList<Character>> sepP = seperatedBy(one('a'), ',');
+    Either<Exception, LinkedList<Character>> result = sepP.parse(toIterator("ab"));
+    assertEquals(1, result.right().size());
+  }
+
+  @Test
+  public void seperatedBy_matchesAll() {
+    Parser<Character, LinkedList<Character>> sepP = seperatedBy(one('a'), ',');
+    UnwindingIterator<Character> iterator = toIterator("a,a,a,a,b");
+    Either<Exception, LinkedList<Character>> result = sepP.parse(iterator);
+    assertEquals(4, result.right().size());
+    for (Character c : result.right()) {
+      assertEquals(new Character('a'), c);
+    }
+    assertEquals(new Character(','), iterator.peek());
   }
 
   private UnwindingIterator<Character> toIterator(String string) {

@@ -8,15 +8,15 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Optional;
 
 public class ParsersTest {
 
   @Test
   public void all_succeedsWhenAllFound() {
-    Parser<Character, List<Character>> allP = all('a', 'b', 'c');
-    List<Character> parsedChars = allP.parse(toIterator("abc")).right();
+    Parser<Character, LinkedList<Character>> allP = all('a', 'b', 'c');
+    LinkedList<Character> parsedChars = allP.parse(toIterator("abc")).right();
 
     assertEquals(3, parsedChars.size());
     assertEquals(new Character('a'), parsedChars.get(0));
@@ -26,13 +26,13 @@ public class ParsersTest {
 
   @Test
   public void all_failsWhenAllNotFound() {
-    Parser<Character, List<Character>> allP = all('a', 'b', 'c');
+    Parser<Character, LinkedList<Character>> allP = all('a', 'b', 'c');
     assertFalse(allP.parse(toIterator("abd")).isRight());
   }
 
   @Test
-  public void all_returnsEmptyListWhenNoElementsMatched() {
-    Parser<Character, List<Character>> allP = all();
+  public void all_returnsEmptyLinkedListWhenNoElementsMatched() {
+    Parser<Character, LinkedList<Character>> allP = all();
     assertTrue(allP.parse(toIterator("abd")).right().isEmpty());
   }
 
@@ -52,17 +52,17 @@ public class ParsersTest {
 
   @Test
   public void many_succeedsOnNoMatches() {
-    Parser<Character, List<Character>> manyP =
+    Parser<Character, LinkedList<Character>> manyP =
         many((c) -> c == 'a' || c == 'b');
     assertTrue(manyP.parse(toIterator("ccc")).right().isEmpty());
   }
 
   @Test
   public void many_returnsAllMatches() {
-    Parser<Character, List<Character>> manyP =
+    Parser<Character, LinkedList<Character>> manyP =
         many((c) -> c == 'a' || c == 'b' || c == 'c');
     UnwindingIterator<Character> text = toIterator("abcd");
-    List<Character> parsedChars = manyP.parse(text).right();
+    LinkedList<Character> parsedChars = manyP.parse(text).right();
 
     assertEquals(3, parsedChars.size());
     assertEquals(new Character('a'), parsedChars.get(0));
@@ -72,10 +72,10 @@ public class ParsersTest {
 
   @Test
   public void many1_returnsAllMatches() {
-    Parser<Character, List<Character>> many1P =
+    Parser<Character, LinkedList<Character>> many1P =
         many1((c) -> c == 'a' || c == 'b' || c == 'c');
     UnwindingIterator<Character> text = toIterator("abcd");
-    List<Character> parsedChars = many1P.parse(text).right();
+    LinkedList<Character> parsedChars = many1P.parse(text).right();
 
     assertEquals(3, parsedChars.size());
     assertEquals(new Character('a'), parsedChars.get(0));
@@ -85,10 +85,10 @@ public class ParsersTest {
 
   @Test
   public void many1_succeedsOnOneMatch() {
-    Parser<Character, List<Character>> many1P =
+    Parser<Character, LinkedList<Character>> many1P =
         many1((c) -> c == 'a' || c == 'b' || c == 'c');
     UnwindingIterator<Character> text = toIterator("ad");
-    List<Character> parsedChars = many1P.parse(text).right();
+    LinkedList<Character> parsedChars = many1P.parse(text).right();
 
     assertEquals(1, parsedChars.size());
     assertEquals(new Character('a'), parsedChars.get(0));
@@ -96,7 +96,7 @@ public class ParsersTest {
 
   @Test
   public void many1_failsOnZeroMatches() {
-    Parser<Character, List<Character>> many1P =
+    Parser<Character, LinkedList<Character>> many1P =
         many1((c) -> c == 'a' || c == 'b');
     assertFalse(many1P.parse(toIterator("ccc")).isRight());
   }
@@ -128,7 +128,7 @@ public class ParsersTest {
   @Test
   public void one_failsAtEndOfString() {
     Parser<Character, Character> oneP = one();
-    Either<String, Character> result = oneP.parse(new ArrayLikeString(""));
+    Either<Exception, Character> result = oneP.parse(new ArrayLikeString(""));
     assertFalse(result.isRight());
   }
 
@@ -160,7 +160,7 @@ public class ParsersTest {
   public void one_updatesIterator() {
     Parser<Character, Character> oneP = one();
     UnwindingIterator<Character> text = toIterator("a");
-    Either<String, Character> result = oneP.parse(text);
+    Either<Exception, Character> result = oneP.parse(text);
     assertTrue(result.isRight());
     result = oneP.parse(text);
     assertFalse(result.isRight());
