@@ -204,10 +204,6 @@ public final class Combinators {
     T call();
   }
 
-  interface QuintFunction<A, B, C, D, E, T> {
-    T apply(A a, B b, C c, D d, E e);
-  }
-
   private static Optional<Exception> checkForFailure(
       Either<Exception, ?> ... eithers) {
     for (int i = 0; i < eithers.length; i++) {
