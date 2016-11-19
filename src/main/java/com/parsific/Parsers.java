@@ -1,8 +1,8 @@
 package com.parsific;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -16,14 +16,14 @@ public class Parsers {
    * Returns a parser that returns a list of tokens, in order, if the
    * iterator has the provided tokens in the provided order.
    */
-  public static <S> Parser<S, List<S>> all(S ... ss) {
+  public static <S> Parser<S, LinkedList<S>> all(S ... ss) {
     return (iterator) -> {
-      List<S> list = new ArrayList<>();
+      LinkedList<S> list = new LinkedList<>();
       for (int i = 0; i < ss.length; i++) {
         if (iterator.hasNext() && iterator.peek().equals(ss[i])) {
           list.add(iterator.next());
         } else {
-          return Either.left("Did not match all items.");
+          return Either.left(new Exception("Did not match all items."));
         }
       }
       return Either.right(list);
@@ -50,9 +50,26 @@ public class Parsers {
    * the list tokens that pass the predicate, accumulated in order until a
    * token fails the predicate.
    */
-  public static <S> Parser<S, List<S>> many(Predicate<S> predicate) {
+  public static <S> Parser<S, LinkedList<S>> many(Predicate<S> predicate) {
     return (iterator) -> {
       return Either.right(accumulate(iterator, predicate));
+    };
+  }
+
+  public static <S, T> Parser<S, LinkedList<T>> manyParser(Parser<S, T> parser) {
+    return (iterator) -> {
+        LinkedList<T> list = new LinkedList<>();
+        while (iterator.hasNext()) {
+          iterator.wind();
+          Either<Exception, T> result = parser.parse(iterator);
+          if (result.isLeft()) {
+            iterator.unwind();
+            return Either.right(list);
+          }
+          iterator.clearWind();
+          list.add(result.right());
+        }
+        return Either.right(list); 
     };
   }
 
@@ -61,11 +78,11 @@ public class Parsers {
    * predicate. Returns a list of tokens that pass the predicate, accumulated
    * in order until a token fails the predicate.
    */
-  public static <S> Parser<S, List<S>> many1(Predicate<S> predicate) {
+  public static <S> Parser<S, LinkedList<S>> many1(Predicate<S> predicate) {
     return (iterator) -> {
-      List<S> list = accumulate(iterator, predicate);
+      LinkedList<S> list = accumulate(iterator, predicate);
       if (list.isEmpty()) {
-        return Either.left("Expected at least one element.");
+        return Either.left(new Exception("Expected at least one element."));
       }
       return Either.right(list);
     };
@@ -103,19 +120,19 @@ public class Parsers {
   public static <S> Parser<S, S> one(Predicate<S> predicate) {
     return (iterator) -> {
       if (!iterator.hasNext()) {
-        return Either.left("Attempting to parse one at end of iterator.");
+        return Either.left(new Exception("Attempting to parse one at end of iterator."));
       }
       if (predicate.test(iterator.peek())) {
         return Either.right(iterator.next());
       }
       return Either.left(
-        "Expected to parse one element, but element did not pass predicate.");
+        new Exception("Expected to parse one element, but element did not pass predicate."));
     };
   }
 
-  private static <S> List<S> accumulate(
+  private static <S> LinkedList<S> accumulate(
       PeekingIterator<S> iterator, Predicate<S> predicate) {
-    List<S> list = new ArrayList<>();
+    LinkedList<S> list = new LinkedList<>();
     while (iterator.hasNext() && predicate.test(iterator.peek())) {
       list.add(iterator.next());
     }
