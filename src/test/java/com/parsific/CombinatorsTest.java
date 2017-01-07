@@ -209,6 +209,16 @@ public class CombinatorsTest {
     assertEquals(new Character(','), iterator.peek());
   }
 
+  @Test
+  public void testParserException_index() {
+    Parser<Character, Character> oneBParser = and(
+      (a, b, c, d, e) -> b,
+      one('a'), one('b'), one('c'), one('d'), one('e'));
+    Either<ParserException, Character> result = oneBParser.parse(toIterator("abc!e"));
+    assertTrue(result.isLeft());
+    assertEquals(3, result.left().getErrorIndex());
+  }
+
   private UnwindingIterator<Character> toIterator(String string) {
     return new UnwindingIterator<>(new ArrayLikeString(string));
   }
