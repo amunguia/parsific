@@ -19,5 +19,4 @@ public class ArrayLikeList<E> implements ArrayLike<E> {
   public int length() {
     return list.size();
   }
-
 }

@@ -128,7 +128,7 @@ public class ParsersTest {
   @Test
   public void one_failsAtEndOfString() {
     Parser<Character, Character> oneP = one();
-    Either<Exception, Character> result = oneP.parse(new ArrayLikeString(""));
+    Either<ParserException, Character> result = oneP.parse(new ArrayLikeString(""));
     assertFalse(result.isRight());
   }
 
@@ -160,7 +160,7 @@ public class ParsersTest {
   public void one_updatesIterator() {
     Parser<Character, Character> oneP = one();
     UnwindingIterator<Character> text = toIterator("a");
-    Either<Exception, Character> result = oneP.parse(text);
+    Either<ParserException, Character> result = oneP.parse(text);
     assertTrue(result.isRight());
     result = oneP.parse(text);
     assertFalse(result.isRight());

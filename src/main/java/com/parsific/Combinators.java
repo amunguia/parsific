@@ -1,7 +1,5 @@
 package com.parsific;
 
-//import static Parsers.one;
-
 import java.util.LinkedList;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -13,9 +11,10 @@ public final class Combinators {
   public static <A, B, S, T> Parser<S, T> and(
       BiFunction<A, B, T> f, Parser<S, A> aParser, Parser<S, B> bParser) {
     return (iterator) -> {
-      Either<Exception, A> aResult = aParser.parse(iterator);
-      Either<Exception, B> bResult = bParser.parse(iterator);
+      Either<ParserException, A> aResult = aParser.parse(iterator);
+      Either<ParserException, B> bResult = bParser.parse(iterator);
       return checkForFailureAndException(
+        iterator.nextIndex(),
         () -> f.apply(aResult.right(), bResult.right()),
         aResult, bResult);
     };
@@ -27,10 +26,11 @@ public final class Combinators {
       Parser<S, B> bParser,
       Parser<S, C> cParser) {
     return (iterator) -> {
-      Either<Exception, A> aResult = aParser.parse(iterator);
-      Either<Exception, B> bResult = bParser.parse(iterator);
-      Either<Exception, C> cResult = cParser.parse(iterator);
+      Either<ParserException, A> aResult = aParser.parse(iterator);
+      Either<ParserException, B> bResult = bParser.parse(iterator);
+      Either<ParserException, C> cResult = cParser.parse(iterator);
       return checkForFailureAndException(
+        iterator.nextIndex(),
         () -> f.apply(aResult.right(), bResult.right(), cResult.right()),
         aResult, bResult, cResult);
     };
@@ -43,11 +43,12 @@ public final class Combinators {
       Parser<S, C> cParser,
       Parser<S, D> dParser) {
     return (iterator) -> {
-      Either<Exception, A> aResult = aParser.parse(iterator);
-      Either<Exception, B> bResult = bParser.parse(iterator);
-      Either<Exception, C> cResult = cParser.parse(iterator);
-      Either<Exception, D> dResult = dParser.parse(iterator);
+      Either<ParserException, A> aResult = aParser.parse(iterator);
+      Either<ParserException, B> bResult = bParser.parse(iterator);
+      Either<ParserException, C> cResult = cParser.parse(iterator);
+      Either<ParserException, D> dResult = dParser.parse(iterator);
       return checkForFailureAndException(
+        iterator.nextIndex(),
         () -> f.apply(
             aResult.right(),
             bResult.right(),
@@ -65,12 +66,13 @@ public final class Combinators {
       Parser<S, D> dParser,
       Parser<S, E> eParser) {
     return (iterator) -> {
-      Either<Exception, A> aResult = aParser.parse(iterator);
-      Either<Exception, B> bResult = bParser.parse(iterator);
-      Either<Exception, C> cResult = cParser.parse(iterator);
-      Either<Exception, D> dResult = dParser.parse(iterator);
-      Either<Exception, E> eResult = eParser.parse(iterator);
+      Either<ParserException, A> aResult = aParser.parse(iterator);
+      Either<ParserException, B> bResult = bParser.parse(iterator);
+      Either<ParserException, C> cResult = cParser.parse(iterator);
+      Either<ParserException, D> dResult = dParser.parse(iterator);
+      Either<ParserException, E> eResult = eParser.parse(iterator);
       return checkForFailureAndException(
+        iterator.nextIndex(),
         () -> f.apply(
             aResult.right(),
             bResult.right(),
@@ -85,7 +87,7 @@ public final class Combinators {
       Parser<S, T> main, Parser<S, ?> ... drop) {
     return (iterator) -> {
       for (int i = 0; i < drop.length; i++) {
-        Either<Exception, ?> dropResult = drop[i].parse(iterator);
+        Either<ParserException, ?> dropResult = drop[i].parse(iterator);
         if (dropResult.isLeft()) {
           return Either.left(dropResult.left());
         }
@@ -98,12 +100,12 @@ public final class Combinators {
   public static <S, T> Parser<S, T> dropRight(
       Parser<S, T> main, Parser<S, ?> ... drop) {
     return (iterator) -> {
-      Either<Exception, T> result = main.parse(iterator);
+      Either<ParserException, T> result = main.parse(iterator);
       if (result.isLeft()) {
         return result;
       }
       for (int i = 0; i < drop.length; i++) {
-        Either<Exception, ?> dropResult = drop[i].parse(iterator);
+        Either<ParserException, ?> dropResult = drop[i].parse(iterator);
         if (dropResult.isLeft()) {
           return Either.left(dropResult.left());
         }
@@ -125,7 +127,7 @@ public final class Combinators {
   public static <S> Parser<S, EOF> end() {
     return (iterator) -> {
       return iterator.hasNext()
-          ? Either.left(new Exception("Input still existed, but expected end of input."))
+          ? Either.left(new ParserException(iterator.nextIndex()))
           : Either.right(EOF.instance);
     };
   }
@@ -140,7 +142,7 @@ public final class Combinators {
       final Parser<S, T> parser) {
     return (iterator) -> {
       iterator.wind();
-      Either<Exception, T> result = parser.parse(iterator);
+      Either<ParserException, T> result = parser.parse(iterator);
       if (result.isRight()) {
         iterator.clearWind();
         return Either.right(Optional.of(result.right()));
@@ -157,9 +159,9 @@ public final class Combinators {
   public static <S, T, U> Parser<S, U> map(
       Parser<S, T> parser, Function<T, U> f) {
     return (iterator) -> {
-      Either<Exception, T> result = parser.parse(iterator);
+      Either<ParserException, T> result = parser.parse(iterator);
       return checkForFailureAndException(
-          () -> f.apply(result.right()), result);
+          iterator.nextIndex(), () -> f.apply(result.right()), result);
     };
   }
 
@@ -170,21 +172,21 @@ public final class Combinators {
   public static <S, T> Parser<S, T> or(Parser<S, T> ... parsers) {
     return (iterator) -> {
       for (int i = 0; i < parsers.length; i++) {
-        Either<Exception, T> result = parsers[i].parse(iterator.wind());
+        Either<ParserException, T> result = parsers[i].parse(iterator.wind());
         if (result.isRight()) {
           iterator.clearWind();
           return result;
         }
         iterator.unwind();
       }
-      return Either.left(new Exception("No parser succeeded."));
+      return Either.left(new ParserException(iterator.nextIndex()));
     };
   }
 
   public static <S, T> Parser<S, T> orDefault(
       Parser<S, T> parser, T defaultValue) {
     return (iterator) -> {
-      Either<Exception, T> result = parser.parse(iterator);
+      Either<ParserException, T> result = parser.parse(iterator);
       return result.isRight() ? result : Either.right(defaultValue);
     };
   }
@@ -204,8 +206,8 @@ public final class Combinators {
     T call();
   }
 
-  private static Optional<Exception> checkForFailure(
-      Either<Exception, ?> ... eithers) {
+  private static Optional<ParserException> checkForFailure(
+      Either<ParserException, ?> ... eithers) {
     for (int i = 0; i < eithers.length; i++) {
       if (eithers[i].isLeft()) {
         return Optional.of(eithers[i].left());
@@ -214,21 +216,22 @@ public final class Combinators {
     return Optional.empty();
   }
 
-  private static <S> Either<Exception, S> checkForException(Callable<S> callable) {
+  private static <S> Either<ParserException, S> checkForException(
+      int iteratorIndex, Callable<S> callable) {
     try {
       return Either.right(callable.call());
     } catch (Exception e) {
-      return Either.left(e);
+      return Either.left(new ParserException(iteratorIndex));
     }
   }
 
-  private static <T> Either<Exception, T> checkForFailureAndException(
-      Callable<T> callable, Either<Exception, ?> ... eithers) {
-    Optional<Exception> optFailure = checkForFailure(eithers);
+  private static <T> Either<ParserException, T> checkForFailureAndException(
+      int iteratorIndex, Callable<T> callable, Either<ParserException, ?> ... eithers) {
+    Optional<ParserException> optFailure = checkForFailure(eithers);
     if (optFailure.isPresent()) {
       return Either.left(optFailure.get());
     }
-    return checkForException(callable);
+    return checkForException(iteratorIndex, callable);
   }
 
   static class EOF {

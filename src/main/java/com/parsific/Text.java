@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public final class Text {
  
-  public static <T> Either<Exception, T> parseString(
+  public static <T> Either<ParserException, T> parseString(
       Parser<Character, T> parser, String string) {
     return parser.parse(new UnwindingIterator<>(new ArrayLikeString(string)));
   }

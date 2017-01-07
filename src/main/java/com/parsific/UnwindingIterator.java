@@ -19,6 +19,10 @@ public final class UnwindingIterator<E> implements PeekingIterator<E> {
     this.unwindStack = new Stack<>();
   }
 
+  public int nextIndex() {
+    return next;
+  }
+
   @Override
   public boolean hasNext() {
     return next < arrayLike.length();

@@ -121,7 +121,7 @@ public class CombinatorsTest {
     UnwindingIterator<Character> text = toIterator("b");
     Parser<Character, Optional<Character>> failP = (iterator) -> {
       iterator.next(); // Purposefully advance the iterator pointer.
-      return Either.left(new Exception("Failed"));
+      return Either.left(new ParserException(1));
     };
     maybe(failP).parse(text).right();
     Optional<Character> optB =
@@ -141,17 +141,7 @@ public class CombinatorsTest {
     Parser<Character, Character> mappedP = map(one(), c -> {
       throw new RuntimeException(errorMessage);
     });
-    assertEquals(errorMessage, mappedP.parse(toIterator("a")).left().getMessage());
-  }
-
-  @Test
-  public void map_preservesTheErrorMessageOnFail() {
-    String failMessage = "Fail";
-    Function<Character, Character> f = c -> {
-      throw new RuntimeException(failMessage);
-    };
-    Parser<Character, Character> mappedP = map(one(), f);
-    assertEquals(failMessage, mappedP.parse(toIterator("a")).left().getMessage());
+    assertEquals(1, mappedP.parse(toIterator("a")).left().getErrorIndex());
   }
 
   @Test
@@ -203,7 +193,7 @@ public class CombinatorsTest {
   @Test
   public void seperatedBy_matchesOne() {
     Parser<Character, LinkedList<Character>> sepP = seperatedBy(one('a'), ',');
-    Either<Exception, LinkedList<Character>> result = sepP.parse(toIterator("ab"));
+    Either<ParserException, LinkedList<Character>> result = sepP.parse(toIterator("ab"));
     assertEquals(1, result.right().size());
   }
 
@@ -211,7 +201,7 @@ public class CombinatorsTest {
   public void seperatedBy_matchesAll() {
     Parser<Character, LinkedList<Character>> sepP = seperatedBy(one('a'), ',');
     UnwindingIterator<Character> iterator = toIterator("a,a,a,a,b");
-    Either<Exception, LinkedList<Character>> result = sepP.parse(iterator);
+    Either<ParserException, LinkedList<Character>> result = sepP.parse(iterator);
     assertEquals(4, result.right().size());
     for (Character c : result.right()) {
       assertEquals(new Character('a'), c);
